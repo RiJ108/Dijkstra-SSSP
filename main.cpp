@@ -2,6 +2,8 @@
 #include <string>
 #include <limits>
 #include <vector>
+#include <sstream>
+#include <fstream>
 
 using namespace std;
 
@@ -9,6 +11,12 @@ double inf = numeric_limits<double>::infinity();
 
 class Graph{
 public:
+    Graph(){
+        if(!import())
+            exit(EXIT_FAILURE);
+        run(false);
+        logPath();
+    }
     ~Graph(){
         free(grid);
         free(visited);
@@ -77,41 +85,29 @@ public:
     float getCostOf(int i){
         return cost[i];
     }
-    void run(){
+    void run(bool debug){
         setCostOf(initialState, 0.0f);
         int currentState;
         bool done = false;
         while(!done){
             currentState = getLowestUnvisitedState();
-            cout << "Lowest is " << currentState << endl;
+            if(debug) cout << "Lowest is " << currentState << endl;
             for(int i = 0 ; i  < nbrOfState ; i++){
                 if(grid[currentState][i] != inf){
-                    cout << "-|to " << i << endl;
+                    if(debug) cout << "-|to " << i << endl;
                     if(getCostOf(currentState) + grid[currentState][i] < cost[i]){
                         setCostOf(i, getCostOf(currentState) + grid[currentState][i]);
                         setOriginOfAt(i, currentState);
-                        cout << "--|relaxing needed. Is at " << cost[i] << " and can relax to " << getCostOf(currentState) + grid[currentState][i] << endl;
-                        cout << "--|" << i << " got is origin change to " << currentState << endl;
+                        if(debug) cout << "--|relaxing needed. Is at " << cost[i] << " and can relax to " << getCostOf(currentState) + grid[currentState][i] << "\n--|" << i << " got is origin change to " << currentState << endl;
                     }
                 }
             }
-            cout << currentState << " has been visited.\n------------------------------------------" << endl;
+            if(debug) cout << currentState << " has been visited.\n------------------------------------------" << endl;
             setVisited(currentState);
             if(getVisited(goalState))
                 done = true;
         }
         setPath();
-    }
-    int getLowestCostState(){
-        float min = getCostOf(0);
-        int lowest = 0;
-        for(int i = 0 ; i < nbrOfState ; i++){
-            if(getCostOf(i) < min){
-                min = getCostOf(i);
-                lowest = i;
-            }
-        }
-        return lowest;
     }
     int getLowestUnvisitedState(){
         float min;
@@ -140,21 +136,78 @@ public:
             cout << "Origin[" << i << "] = " << getOriginOf(i) << endl;
     }
     void logPath(){
+        cout << "Path found : ";
         for(int i = 0 ; i < path.size() ; i++){
             if(i != 0)
                 cout << " -> ";
             cout << path[i];
         }
+        cout << endl;
     }
     void setPath(){
         int currentState = goalState;
         path.push_back(currentState);
         do{
-            //cout << " <- " << getOriginOf(currentState);
-
             currentState = getOriginOf(currentState);
             path.insert(path.begin(),currentState);
         }while(currentState != initialState);
+    }
+    bool import(){
+        ifstream file;
+        file.open("data.txt");
+        if(!file.is_open()){
+            cout << "FAILURE!! unable to access file data.txt\n Exiting." << endl;
+            return false;
+        }
+        string str,tmp;
+        int a,b,index;
+        float c;
+        char ch;
+        getline(file, str);
+        tmp = "";
+        index = 0;
+        for(int i = 0 ; i < str.size() ; i++){
+            ch = str.at(i);
+            if(ch != '-')
+                tmp += ch;
+            else{
+                if(index == 0){
+                    a = stoi(tmp);
+                    tmp = "";
+                    index++;
+                }else if(index == 1){
+                    b = stoi(tmp);
+                    tmp = "";
+                }
+            }
+        }
+        c = stoi(tmp);
+        nbrOfState = a;
+        initialState = b;
+        goalState = c;
+        alloc();
+        while(getline(file, str)){
+            tmp = "";
+            index = 0;
+            for(int i = 0 ; i < str.size() ; i++){
+                ch = str.at(i);
+                if(ch != '/')
+                    tmp += ch;
+                else{
+                    if(index == 0){
+                        a = stoi(tmp);
+                        tmp = "";
+                        index ++;
+                    }else if(index == 1){
+                        c = stoi(tmp);
+                        tmp ="";
+                    }
+                }
+            }
+            b = stoi(tmp);
+            setGridValueAt(a,b,c);
+        }
+        return true;
     }
 private:
     string name;
@@ -171,23 +224,5 @@ private:
 int main(void){
     cout << "Dijkstra Single Source Shortest Path" << endl;
     Graph graph;
-    graph.set_nbrOfState(6);
-    graph.alloc();
-    graph.setInitialState(0);
-    graph.setGoalState(5);
-    graph.setGridValueAt(0,1,2);
-    graph.setGridValueAt(0,2,4);
-    graph.setGridValueAt(1,2,1);
-    graph.setGridValueAt(1,3,7);
-    graph.setGridValueAt(2,4,3);
-    graph.setGridValueAt(4,3,2);
-    graph.setGridValueAt(4,5,5);
-    graph.setGridValueAt(3,5,1);
-    /*graph.logGrid();
-    graph.logCosts();*/
-    graph.run();
-    /*graph.logCosts();
-    graph.logOrigins();*/
-    graph.logPath();
     return 0;
 }
