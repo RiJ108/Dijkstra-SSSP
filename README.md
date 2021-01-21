@@ -6,8 +6,11 @@ To get a graph to the program, edit the data.txt file following the rules:
 2. for each transition, add a line as "index of the source/cost of the transition/index of the destination"
 
 For exemple, the following graph:
+
 ![GitHub Logo](/graph.png)
+
 Translate to the following data.txt:
+
 6-0-5
 0/2/1
 0/4/2
